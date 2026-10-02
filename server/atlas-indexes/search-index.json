@@ -1,0 +1,29 @@
+{
+  "name": "chunk_text_index",
+  "type": "search",
+  "definition": {
+    "mappings": {
+      "dynamic": false,
+      "fields": {
+        "text": {
+          "type": "string",
+          "analyzer": "lucene.standard",
+          "searchAnalyzer": "lucene.standard"
+        },
+        "userId": {
+          "type": "objectId"
+        },
+        "documentId": {
+          "type": "objectId"
+        },
+        "page": {
+          "type": "number"
+        },
+        "section": {
+          "type": "string",
+          "analyzer": "lucene.standard"
+        }
+      }
+    }
+  }
+}
