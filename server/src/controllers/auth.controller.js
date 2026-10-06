@@ -42,6 +42,13 @@ export const register = asyncHandler(async (req, res) => {
     { expiresIn: config.JWT_EXPIRES_IN }
   );
 
+  // Generate refresh token
+  const refreshToken = jwt.sign(
+    { id: user._id },
+    config.JWT_SECRET,
+    { expiresIn: '30d' } // Refresh tokens last longer
+  );
+
   // Set cookie with security flags
   const cookieOptions = {
     httpOnly: true,
@@ -55,6 +62,8 @@ export const register = asyncHandler(async (req, res) => {
   // Return user without sensitive data
   res.status(201).json({
     message: 'User registered successfully',
+    token,
+    refreshToken,
     user: {
       id: user._id,
       email: user.email,
@@ -94,6 +103,13 @@ export const login = asyncHandler(async (req, res) => {
     { expiresIn: config.JWT_EXPIRES_IN }
   );
 
+  // Generate refresh token
+  const refreshToken = jwt.sign(
+    { id: user._id },
+    config.JWT_SECRET,
+    { expiresIn: '30d' } // Refresh tokens last longer
+  );
+
   // Set cookie with security flags
   const cookieOptions = {
     httpOnly: true,
@@ -107,6 +123,8 @@ export const login = asyncHandler(async (req, res) => {
   // Return user without sensitive data
   res.json({
     message: 'Login successful',
+    token,
+    refreshToken,
     user: {
       id: user._id,
       email: user.email,
@@ -164,14 +182,25 @@ export const getMe = asyncHandler(async (req, res) => {
 /**
  * Refresh authentication token
  * POST /api/auth/refresh
- * Requires authentication
+ * Body: { refreshToken }
  */
 export const refreshToken = asyncHandler(async (req, res) => {
-  // Get user ID from current token (set by requireAuth middleware)
-  const userId = req.user.id;
+  const { refreshToken: clientRefreshToken } = req.body;
+
+  if (!clientRefreshToken) {
+    throw ApiError.badRequest('Refresh token is required');
+  }
+
+  // Verify refresh token
+  let decoded;
+  try {
+    decoded = jwt.verify(clientRefreshToken, config.JWT_SECRET);
+  } catch (error) {
+    throw ApiError.unauthorized('Invalid refresh token');
+  }
 
   // Verify user still exists
-  const user = await User.findById(userId);
+  const user = await User.findById(decoded.id);
   if (!user) {
     throw ApiError.unauthorized('User not found');
   }
@@ -181,6 +210,13 @@ export const refreshToken = asyncHandler(async (req, res) => {
     { id: user._id },
     config.JWT_SECRET,
     { expiresIn: config.JWT_EXPIRES_IN }
+  );
+
+  // Generate new refresh token
+  const refreshToken = jwt.sign(
+    { id: user._id },
+    config.JWT_SECRET,
+    { expiresIn: '30d' } // Refresh tokens last longer
   );
 
   // Set new cookie
@@ -194,6 +230,8 @@ export const refreshToken = asyncHandler(async (req, res) => {
   res.cookie('token', token, cookieOptions);
 
   res.json({
-    message: 'Token refreshed successfully'
+    message: 'Token refreshed successfully',
+    token,
+    refreshToken
   });
 });

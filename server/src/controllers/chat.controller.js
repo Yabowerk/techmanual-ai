@@ -39,46 +39,29 @@ export const streamChat = asyncHandler(async (req, res) => {
   let isDisconnected = false;
   handleSSEDisconnect(req, res, () => {
     isDisconnected = true;
-    console.log(`🔌 Client disconnected from chat for document ${documentId}`);
   });
 
   try {
-    console.log(`💬 Starting chat for document ${documentId}, question: ${question.substring(0, 100)}...`);
-
     // Find or create chat conversation
     const chat = await Chat.findOrCreateChat(userId, documentId);
     
     // Add user message to conversation
     await chat.addUserMessage(question);
-    sendProgress(res, 'message_saved', 'Question saved to conversation history');
+    sendProgress(res, 'message_saved', 'Question saved');
 
     if (isDisconnected) return;
 
     // STEP 1: Retrieve relevant chunks
-    sendProgress(res, 'retrieving', 'Finding relevant information in the manual...');
+    sendProgress(res, 'retrieving', 'Finding relevant information...');
     
     let relevantChunks;
     try {
-      // TODO: When retrieve service is implemented, this will work
-      // For now, we'll simulate the process and return a placeholder response
       relevantChunks = await hybridRetrieve(userId, documentId, question);
-      console.log(`🔍 Retrieved ${relevantChunks.length} relevant chunks`);
     } catch (error) {
-      console.log(`⚠️  Retrieval service not implemented, using placeholder response`);
-      sendProgress(res, 'retrieval_placeholder', 'Using placeholder response (retrieval service not implemented)');
+      sendProgress(res, 'retrieval_placeholder', 'Using placeholder response');
       
-      // Send a placeholder response indicating the service isn't implemented
-      const placeholderResponse = `I apologize, but the retrieval and LLM services are not yet implemented. 
-
-Your question: "${question}"
-
-Once the following services are implemented, I will be able to:
-1. Search through the manual content using hybrid vector + keyword search
-2. Re-rank results for relevance using Cohere
-3. Generate grounded answers using Claude with proper page citations
-4. Include any safety warnings found in the relevant sections
-
-The chat infrastructure is working correctly - you can see your message has been saved to the conversation history.`;
+      // Send a placeholder response
+      const placeholderResponse = `I apologize, but the retrieval and LLM services are not yet fully implemented.`;
 
       // Simulate streaming response
       const words = placeholderResponse.split(' ');
@@ -86,11 +69,9 @@ The chat infrastructure is working correctly - you can see your message has been
         if (isDisconnected) return;
         
         sendToken(res, words[i] + ' ');
-        // Small delay to simulate streaming
         await new Promise(resolve => setTimeout(resolve, 50));
       }
 
-      // Save the placeholder response to chat history
       await chat.addAssistantMessage(placeholderResponse, []);
       
       sendComplete(res, {
@@ -104,14 +85,12 @@ The chat infrastructure is working correctly - you can see your message has been
     if (isDisconnected) return;
 
     // STEP 2: Re-rank chunks for better relevance
-    sendProgress(res, 'reranking', 'Improving relevance of retrieved information...');
+    sendProgress(res, 'reranking', 'Improving relevance...');
     
     let rankedChunks;
     try {
       rankedChunks = await rerank(question, relevantChunks, 5);
-      console.log(`📊 Re-ranked to ${rankedChunks.length} most relevant chunks`);
     } catch (error) {
-      console.log(`⚠️  Rerank service not implemented, using original order`);
       // Fallback to original order if reranking fails
       rankedChunks = relevantChunks.slice(0, 5).map(chunk => ({ chunk, relevanceScore: 0.8 }));
     }
@@ -119,7 +98,7 @@ The chat infrastructure is working correctly - you can see your message has been
     if (isDisconnected) return;
 
     // STEP 3: Generate response using LLM
-    sendProgress(res, 'generating', 'Generating response based on manual content...');
+    sendProgress(res, 'generating', 'Generating response...');
     
     try {
       // Get conversation history for context
@@ -129,40 +108,33 @@ The chat infrastructure is working correctly - you can see your message has been
       const chunks = rankedChunks.map(r => r.chunk);
       const prompt = buildQuestionPrompt(question, chunks, history);
 
-      console.log(`🧠 Generated prompt for LLM (${prompt.length} characters)`);
-
       // Prepare citations from the chunks
       const citations = chunks.slice(0, 3).map(chunk => ({
         page: chunk.page,
         chunkId: chunk._id
       }));
 
-      // CALL YOUR LLM SERVICE HERE
-      console.log(`🎯 About to call streamChatResponse with prompt length: ${prompt.length}`);
+      // Stream the LLM response
       const fullResponse = await streamChatResponse(res, prompt, chunks);
-      console.log(`📝 LLM response received - Length: ${fullResponse ? fullResponse.length : 'undefined'}, Type: ${typeof fullResponse}, Content preview: "${fullResponse ? fullResponse.substring(0, 100) : 'EMPTY/NULL'}..."`);
 
       // Validate response before saving
       if (!fullResponse || fullResponse.trim().length === 0) {
-        console.error('❌ LLM returned empty response - using fallback');
-        const fallbackResponse = "I apologize, but I was unable to generate a response based on the manual content. Please try rephrasing your question.";
+        const fallbackResponse = "I apologize, but I was unable to generate a response. Please try rephrasing your question.";
         await chat.addAssistantMessage(fallbackResponse, citations);
       } else {
         // Save assistant response to chat history
-        console.log(`✅ Saving LLM response to chat history (${fullResponse.length} chars)`);
         await chat.addAssistantMessage(fullResponse, citations);
       }
 
       sendComplete(res, {
         message: 'Response completed',
-        tokensGenerated: 0, // track this if your service returns it
+        tokensGenerated: 0,
         citationsFound: citations.length,
         chunksUsed: chunks.length
       });
 
-
     } catch (error) {
-      console.error(`❌ Error in chat generation:`, error);
+      console.error(`❌ Chat generation error:`, error);
       sendError(res, 'Failed to generate response');
     }
 
@@ -170,7 +142,7 @@ The chat infrastructure is working correctly - you can see your message has been
     console.error(`❌ Chat error for document ${documentId}:`, error);
     
     if (!isDisconnected) {
-      sendError(res, error.message || 'An error occurred while processing your question');
+      sendError(res, error.message || 'An error occurred');
     }
   }
 });

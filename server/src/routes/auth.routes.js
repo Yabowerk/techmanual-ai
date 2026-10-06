@@ -51,8 +51,13 @@ router.get('/me', requireAuth, getMe);
 /**
  * Refresh authentication token
  * POST /api/auth/refresh
- * Requires authentication
+ * Body: { refreshToken }
  */
-router.post('/refresh', requireAuth, refreshToken);
+router.post('/refresh', 
+  validate({
+    body: schemas.refreshToken
+  }),
+  refreshToken
+);
 
 export default router;

@@ -188,6 +188,11 @@ chatSchema.methods.isFirstInteraction = function() {
   return this.messages.length === 1 && this.messages[0].role === 'assistant';
 };
 
+// Method to get user message count
+chatSchema.methods.getUserMessageCount = function() {
+  return this.messages.filter(msg => msg.role === 'user').length;
+};
+
 // Method to clear conversation history (keep the chat but remove messages)
 chatSchema.methods.clearHistory = function() {
   this.messages = [];

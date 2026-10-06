@@ -256,18 +256,16 @@ const selectSampleChunks = (chunks) => {
 const callLLMForSummary = async (documentText) => {
   const { summarizeDocument } = await import('./llm.service.js');
   
-  const prompt = `Please analyze this technical manual sample and create a concise summary. Focus on:
+  const prompt = `Create a VERY BRIEF summary in EXACTLY 3 LINES for this technical manual. Each line should be one short sentence with an emoji at the start.
 
-1. What type of equipment or system this manual covers
-2. Main sections and topics covered
-3. Key safety information mentioned
-4. Types of procedures included (installation, operation, maintenance, troubleshooting)
-5. Target audience (operators, technicians, etc.)
+Line 1: What equipment or system this manual covers (emoji: 🔧)
+Line 2: What main purpose or operation it describes (emoji: 🎯)
+Line 3: Key procedures or use cases (emoji: 📋)
+
+DO NOT write paragraphs. DO NOT exceed 3 lines. Be extremely concise.
 
 Document sample:
-${documentText}
-
-Provide a clear, informative summary in 2-3 paragraphs that helps users understand what this manual contains.`;
+${documentText}`;
 
   return await summarizeDocument(prompt);
 };

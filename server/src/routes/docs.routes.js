@@ -40,6 +40,23 @@ router.get('/:id',
 );
 
 /**
+ * Handle CORS preflight for file endpoint specifically
+ * OPTIONS /api/docs/:id/file
+ */
+router.options('/:id/file', (req, res) => {
+  const origin = req.headers.origin;
+  if (origin) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Cache-Control');
+    res.setHeader('Access-Control-Expose-Headers', 'Content-Type, Content-Disposition, Content-Length, Accept-Ranges');
+    res.setHeader('Access-Control-Max-Age', '86400');
+  }
+  res.status(200).end();
+});
+
+/**
  * Stream PDF file for viewing
  * GET /api/docs/:id/file
  * Returns PDF file as stream with appropriate headers

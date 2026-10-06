@@ -46,8 +46,6 @@ Remember: Your credibility comes from being accurate and honest about the manual
  */
 export const streamChatResponse = async (res, userPrompt, chunks) => {
   try {
-    console.log(`🤖 Calling OpenRouter API with streaming...`);
-
     // Prepare request body
     const requestBody = {
       model: 'openai/gpt-4o-mini', // Using reliable OpenAI model
@@ -124,9 +122,9 @@ export const streamChatResponse = async (res, userPrompt, chunks) => {
                 await sendToken(res, content);
               }
             } catch (parseError) {
-              // Skip non-JSON lines or comments
+              // Skip non-JSON lines or comments - silently ignore
               if (data.startsWith('{')) {
-                console.log(`⚠️  Parse error in stream chunk:`, parseError.message, 'Data:', data);
+                console.debug(`Parse error in stream chunk:`, parseError.message);
               }
             }
           }
@@ -136,7 +134,7 @@ export const streamChatResponse = async (res, userPrompt, chunks) => {
       reader.releaseLock();
     }
 
-    console.log(`✅ OpenRouter response completed (${fullResponse.length} chars)`);
+    console.log(`✅ OpenRouter response completed`);
     return fullResponse;
 
   } catch (error) {
@@ -169,13 +167,13 @@ export const summarizeDocument = async (prompt) => {
       messages: [
         {
           role: 'system',
-          content: 'You are a technical writing assistant that creates concise, informative summaries of technical manuals. Focus on equipment type, key procedures, safety information, and main topics covered.'
+          content: 'You are a technical writing assistant. Create a VERY BRIEF summary of technical manuals in exactly 3 lines. Each line should be concise and start with an emoji. Format: Line 1: Equipment/Type, Line 2: Main Purpose, Line 3: Key Use Cases. Do NOT add paragraphs, do NOT exceed 3 lines.'
         },
         { role: 'user', content: prompt }
       ],
       stream: false, // Non-streaming for clean response
       temperature: 0.3, // Lower temperature for more consistent summaries
-      max_tokens: 500 // Limit summary length
+      max_tokens: 150 // Limit summary length to force brevity
     };
 
     // Make request to OpenRouter API

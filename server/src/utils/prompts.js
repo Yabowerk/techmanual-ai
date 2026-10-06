@@ -38,22 +38,7 @@ Remember: Your credibility comes from being accurate and honest about the manual
  * System prompt for document summarization
  * Instructs the model to create concise summaries of technical manuals
  */
-export const SUMMARY_PROMPT = `Analyze the provided technical manual content and create a comprehensive summary in under 200 words.
-
-Include:
-1. What equipment or system this manual covers (model, type, purpose)
-2. Main sections and topics covered
-3. Key operational procedures or functions
-4. Important safety considerations mentioned
-5. Target audience (technicians, operators, maintenance staff, etc.)
-
-Format:
-- Start with a clear identification of the equipment/system
-- Use bullet points for main sections
-- Highlight critical safety or operational notes
-- Keep it concise and informative
-
-Focus on giving readers a clear understanding of what they can expect to find in this manual and its primary use cases.`;
+export const SUMMARY_PROMPT = `just reply x`;
 
 /**
  * Build context string from chunks for LLM input

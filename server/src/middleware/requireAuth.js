@@ -4,12 +4,20 @@ import config from '../config/env.js';
 
 /**
  * Authentication middleware
- * Verifies JWT token from cookie and attaches user to request
+ * Verifies JWT token from cookie or Authorization header and attaches user to request
  */
 const requireAuth = (req, res, next) => {
   try {
-    // Extract token from cookie
-    const token = req.cookies?.token;
+    // Extract token from cookie or Authorization header
+    let token = req.cookies?.token;
+    
+    // If no token in cookie, check Authorization header
+    if (!token) {
+      const authHeader = req.headers.authorization;
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        token = authHeader.substring(7); // Remove 'Bearer ' prefix
+      }
+    }
 
     if (!token) {
       throw ApiError.unauthorized('Access token required');

@@ -98,6 +98,11 @@ export const schemas = {
       .min(1, 'Password is required')
   }),
 
+  refreshToken: z.object({
+    refreshToken: z.string()
+      .min(1, 'Refresh token is required')
+  }),
+
   // Chat schemas
   chatMessage: z.object({
     question: z.string()

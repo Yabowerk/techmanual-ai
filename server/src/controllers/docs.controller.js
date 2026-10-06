@@ -113,21 +113,33 @@ export const getFile = asyncHandler(async (req, res) => {
   }
 
   try {
+    // Set CORS headers BEFORE any other operations
+    const origin = req.headers.origin;
+    if (origin) {
+      res.setHeader('Access-Control-Allow-Origin', origin);
+      res.setHeader('Access-Control-Allow-Credentials', 'true');
+      res.setHeader('Access-Control-Expose-Headers', 'Content-Type, Content-Disposition, Content-Length, Accept-Ranges');
+    }
+    
     // Get file stream from storage service
     const fileStream = await getFileStream(document.fileKey);
-
-    // Set appropriate headers for PDF viewing
+    
+    // Set appropriate headers for PDF viewing and download
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `inline; filename="${document.originalFilename}"`);
     res.setHeader('Cache-Control', 'private, max-age=3600'); // Cache for 1 hour
+    res.setHeader('Accept-Ranges', 'bytes');
 
-    // Stream the file to the client
-    fileStream.pipe(res);
+    console.log(`📄 Starting file stream for ${document.fileKey} (user: ${userId})`);
 
-    // Handle stream errors
+    // Handle stream events BEFORE piping
     fileStream.on('error', (error) => {
       console.error(`❌ Error streaming file ${document.fileKey}:`, error);
       if (!res.headersSent) {
+        // Set CORS headers even for error responses
+        if (origin) {
+          res.setHeader('Access-Control-Allow-Origin', origin);
+        }
         res.status(500).json({
           error: {
             message: 'Failed to retrieve file',
@@ -137,9 +149,24 @@ export const getFile = asyncHandler(async (req, res) => {
       }
     });
 
-    console.log(`📄 Streaming file ${document.fileKey} for user ${userId}`);
+    fileStream.on('end', () => {
+      console.log(`✅ File stream completed for ${document.fileKey}`);
+    });
+
+    res.on('close', () => {
+      console.log(`🔌 Client closed connection for ${document.fileKey}`);
+    });
+
+    // Stream the file to the client
+    fileStream.pipe(res);
 
   } catch (error) {
+    // Set CORS headers for error responses too
+    const origin = req.headers.origin;
+    if (origin) {
+      res.setHeader('Access-Control-Allow-Origin', origin);
+    }
+    
     if (error instanceof ApiError) {
       throw error;
     }
