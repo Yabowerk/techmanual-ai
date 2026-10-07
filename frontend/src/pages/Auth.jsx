@@ -72,11 +72,11 @@ export default function Auth() {
 
       {/* Top Navigation - matches Dashboard */}
       <nav className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-3">
-              <img src="/icon.png" alt="TechManual AI" className="w-10 h-10" />
-              <h1 className="text-xl font-semibold text-gray-900">TechManual AI</h1>
+            <div className="flex items-center space-x-2 sm:space-x-3">
+              <img src="/icon.png" alt="TechManual AI" className="w-8 h-8 sm:w-10 sm:h-10" />
+              <h1 className="text-lg sm:text-xl font-semibold text-gray-900">TechManual AI</h1>
             </div>
           </div>
         </div>
@@ -85,10 +85,10 @@ export default function Auth() {
       {/* Auth Card */}
       <div className="flex-1 flex items-center justify-center px-4 py-12">
         <div className="w-full max-w-md">
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 md:p-8">
             {/* Header */}
             <div className="text-center mb-8">
-              <h2 className="text-2xl font-semibold text-gray-900 mb-2">
+              <h2 className="text-xl md:text-2xl font-semibold text-gray-900 mb-2">
                 {isLogin ? 'Welcome back' : 'Create your account'}
               </h2>
               <p className="text-gray-600 text-sm">
@@ -114,7 +114,7 @@ export default function Auth() {
                       onChange={handleChange}
                       placeholder="Your name"
                       required={!isLogin}
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-md text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
                     />
                   </div>
                 </div>
@@ -134,7 +134,7 @@ export default function Auth() {
                     onChange={handleChange}
                     placeholder="your@email.com"
                     required
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-md text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
                   />
                 </div>
               </div>
@@ -153,7 +153,7 @@ export default function Auth() {
                     onChange={handleChange}
                     placeholder="••••••••"
                     required
-                    className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                    className="w-full pl-10 pr-10 py-3 border border-gray-300 rounded-md text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
                   />
                   <button
                     type="button"
@@ -170,7 +170,7 @@ export default function Auth() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-gray-400 disabled:cursor-not-allowed transition"
+                className="w-full flex items-center justify-center px-4 py-3 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-gray-400 disabled:cursor-not-allowed transition"
               >
                 {loading ? 'Please wait…' : isLogin ? 'Sign in' : 'Create account'}
               </button>

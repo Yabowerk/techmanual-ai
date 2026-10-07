@@ -6,6 +6,28 @@
   body {
     @apply bg-slate-900 text-slate-50;
   }
+  
+  /* Ensure mobile-friendly base styles */
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+@layer utilities {
+  /* Touch target minimum size utility */
+  .touch-target {
+    min-width: 44px;
+    min-height: 44px;
+  }
+  
+  /* Prevent horizontal scroll on mobile */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
 }
 
 /* PDF Viewer Styles */
@@ -22,4 +44,6 @@
 .react-pdf__Page__canvas {
   display: block;
   margin: 0 auto;
+  max-width: 100%;
+  height: auto !important;
 }

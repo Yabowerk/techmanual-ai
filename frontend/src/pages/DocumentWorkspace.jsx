@@ -7,7 +7,7 @@ import { useChat } from '../hooks/useChat'
 import { useDocuments } from '../hooks/useDocuments'
 import { useAuth } from '../hooks/useAuth'
 import ErrorNotification from '../components/ErrorNotification'
-import { FiArrowLeft, FiChevronLeft, FiChevronRight, FiSend, FiFile, FiUser, FiLogOut, FiFolder, FiMinus, FiPlus } from 'react-icons/fi'
+import { FiArrowLeft, FiChevronLeft, FiChevronRight, FiSend, FiFile, FiUser, FiLogOut, FiFolder, FiMinus, FiPlus, FiMessageSquare, FiBookOpen } from 'react-icons/fi'
 import { BsRobot } from 'react-icons/bs'
 import { cleanAIResponse } from '../utils/helpers'
 
@@ -25,7 +25,28 @@ export default function DocumentWorkspace() {
   const [question, setQuestion] = useState('')
   const [scale, setScale] = useState(1.0)
   const [loading, setLoading] = useState(true)
+  const [mobileView, setMobileView] = useState('pdf') // 'chat' or 'pdf'
   const chatEndRef = useRef(null)
+
+  // Set initial PDF scale based on screen size
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth < 768) {
+        // Mobile: smaller initial scale
+        setScale(0.6)
+      } else {
+        // Desktop: normal scale
+        setScale(1.0)
+      }
+    }
+
+    // Set initial scale
+    handleResize()
+
+    // Listen for window resize
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
 
   // Load document from URL parameter if needed
   useEffect(() => {
@@ -72,6 +93,11 @@ export default function DocumentWorkspace() {
     const questionText = question
     setQuestion('')
 
+    // Switch to chat view on mobile when sending a message
+    if (window.innerWidth < 768) {
+      setMobileView('chat')
+    }
+
     try {
       await sendMessage(currentDocument.id, questionText)
     } catch (error) {
@@ -82,6 +108,10 @@ export default function DocumentWorkspace() {
   const handlePageReference = (pageNum) => {
     if (pageNum && pageNum >= 1 && pageNum <= numPages) {
       setCurrentPage(pageNum)
+      // Switch to PDF view on mobile when clicking a page reference
+      if (window.innerWidth < 768) {
+        setMobileView('pdf')
+      }
     }
   }
 
@@ -140,26 +170,26 @@ export default function DocumentWorkspace() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Left side */}
-            <div className="flex items-center space-x-3">
-              <img src="/icon.png" alt="TechManual AI" className="w-10 h-10" />
-              <h1 className="text-xl font-semibold text-gray-900">TechManual AI</h1>
+            <div className="flex items-center space-x-2 sm:space-x-3">
+              <img src="/icon.png" alt="TechManual AI" className="w-8 h-8 sm:w-10 sm:h-10" />
+              <h1 className="text-lg sm:text-xl font-semibold text-gray-900">TechManual AI</h1>
             </div>
 
             {/* Center */}
             <div className="flex-1"></div>
 
             {/* Right side */}
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2 text-gray-600">
+            <div className="flex items-center space-x-3 sm:space-x-4">
+              <div className="hidden md:flex items-center space-x-2 text-gray-600">
                 <FiUser size={16} />
                 <span className="text-sm">{user?.name || 'no name'}</span>
               </div>
               <button
                 onClick={logout}
-                className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 text-sm"
+                className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 text-sm touch-target"
               >
                 <FiLogOut size={16} />
-                <span>Log out</span>
+                <span className="hidden sm:inline">Log out</span>
               </button>
             </div>
           </div>
@@ -168,15 +198,15 @@ export default function DocumentWorkspace() {
 
       {/* Document Header */}
       <div className="bg-white border-b border-gray-200 flex-shrink-0">
-        <div className="max-w-7xl mx-auto px-9 sm:px-8 lg:px-10 py-2">
-          <div className="flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-1 sm:py-2">
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center space-x-4">
               <button
                 onClick={handleBackToDashboard}
-                className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 text-sm"
+                className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 text-sm touch-target"
               >
                 <FiArrowLeft size={16} />
-                <span>Back to dashboard</span>
+                <span className="hidden sm:inline">Back to dashboard</span>
               </button>
             </div>
             
@@ -185,8 +215,8 @@ export default function DocumentWorkspace() {
                 <FiFile className="text-red-500" size={16} />
               </div>
               <div>
-                <h2 className="text-lg font-medium text-gray-900">{currentDocument.title}</h2>
-                <div className="flex items-center space-x-4 text-sm text-gray-500">
+                <h2 className="text-base sm:text-lg font-medium text-gray-900">{currentDocument.title}</h2>
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs sm:text-sm text-gray-500">
                   <span>{currentDocument.pageCount || numPages} pages</span>
                   <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusBadge(currentDocument.status)}`}>
                     • {currentDocument.status === 'ready' ? 'Ready' : currentDocument.status === 'processing' ? 'Processing' : 'Failed'}
@@ -199,24 +229,54 @@ export default function DocumentWorkspace() {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 overflow-hidden">
-        <div className="max-w-10xl mx-auto px-4 sm:px-6 lg:px-1 h-full">
-          <div className="flex gap-6 h-full p-4">
+      <div className="flex-1 overflow-hidden md:overflow-auto">
+        <div className="max-w-10xl mx-auto px-2 sm:px-4 lg:px-6 h-full">
+          {/* Mobile Toggle Bar */}
+          <div className="md:hidden bg-white border-b border-gray-200 sticky top-0 z-10">
+            <div className="flex">
+              <button
+                onClick={() => setMobileView('chat')}
+                className={`flex-1 flex items-center justify-center space-x-2 py-3 text-sm font-medium transition-colors ${
+                  mobileView === 'chat'
+                    ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50'
+                    : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                <FiMessageSquare size={18} />
+                <span>Chat</span>
+              </button>
+              <button
+                onClick={() => setMobileView('pdf')}
+                className={`flex-1 flex items-center justify-center space-x-2 py-3 text-sm font-medium transition-colors ${
+                  mobileView === 'pdf'
+                    ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50'
+                    : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                <FiBookOpen size={18} />
+                <span>PDF</span>
+              </button>
+            </div>
+          </div>
+
+          <div className="flex flex-col md:flex-row gap-4 md:gap-6 h-full p-2 sm:p-4">
             {/* Left Sidebar - Chat Interface */}
-            <div className="w-98 flex flex-col bg-white rounded-lg shadow-sm border border-gray-200 h-full">
+            <div className={`w-full md:w-96 lg:w-[28rem] flex flex-col bg-white rounded-lg shadow-sm border border-gray-200 min-h-[50vh] md:h-full ${
+              mobileView === 'pdf' ? 'hidden md:flex' : 'flex'
+            }`}>
               {/* Overview Section */}
-              <div className="p-4 border-b border-gray-200 flex-shrink-0">
+              <div className="p-3 sm:p-4 border-b border-gray-200 flex-shrink-0">
                 <div className="flex items-center space-x-2 mb-3">
                   <FiFile size={16} className="text-gray-400" />
-                  <h3 className="text-sm font-medium text-gray-900">Overview</h3>
+                  <h3 className="text-xs sm:text-sm font-medium text-gray-900">Overview</h3>
                 </div>
-                <p className="text-sm text-gray-600 leading-relaxed">
+                <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
                   {currentDocument.summary || 'Service manual for the X200 industrial pump. Covers installation, maintenance, error codes, and calibration.'}
                 </p>
               </div>
 
               {/* Chat Messages */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0">
+              <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-4 min-h-0 h-64 sm:h-80 md:flex-1">
                 {chatHistory.length === 0 && (
                   <div className="text-center py-8 text-gray-500">
                     <p className="text-sm">Ask questions about this manual to get started.</p>
@@ -227,12 +287,12 @@ export default function DocumentWorkspace() {
                   <div key={msg.id || idx}>
                     {msg.role === 'user' ? (
                       <div className="flex justify-end mb-4">
-                        <div className="bg-blue-600 text-white px-4 py-2 rounded-2xl rounded-br-md max-w-xs">
-                          <p className="text-sm">{msg.content}</p>
+                        <div className="bg-blue-600 text-white px-3 sm:px-4 py-2 rounded-2xl rounded-br-md max-w-[85%] sm:max-w-xs">
+                          <p className="text-xs sm:text-sm">{msg.content}</p>
                         </div>
                       </div>
                     ) : (
-                      <div className="bg-gray-50 p-4 rounded-lg mb-4">
+                      <div className="bg-gray-50 p-3 sm:p-4 rounded-lg mb-4">
                         <div className="flex items-center space-x-2 mb-2">
                           <BsRobot className="w-6 h-6 text-blue-600" />
                           <span className="text-sm font-medium text-gray-900">AI Assistant</span>
@@ -306,7 +366,7 @@ export default function DocumentWorkspace() {
                                   <button
                                     key={i}
                                     onClick={() => handlePageReference(citation.page)}
-                                    className="inline-flex items-center px-2 py-1 bg-blue-50 text-blue-700 text-xs font-medium rounded hover:bg-blue-100 transition"
+                                    className="inline-flex items-center px-2 sm:px-3 py-1.5 sm:py-1 bg-blue-50 text-blue-700 text-xs font-medium rounded hover:bg-blue-100 transition touch-target"
                                   >
                                     Page {citation.page}
                                   </button>
@@ -333,7 +393,7 @@ export default function DocumentWorkspace() {
               </div>
 
               {/* Chat Input */}
-              <div className="border-t border-gray-200 p-4 flex-shrink-0">
+              <div className="border-t border-gray-200 p-3 sm:p-4 flex-shrink-0">
                 <form onSubmit={handleSendMessage} className="flex space-x-2">
                   <input
                     type="text"
@@ -341,12 +401,12 @@ export default function DocumentWorkspace() {
                     onChange={(e) => setQuestion(e.target.value)}
                     placeholder="Ask about this manual"
                     disabled={streaming}
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none disabled:opacity-50 text-sm"
+                    className="flex-1 px-3 py-3 border border-gray-300 rounded-md text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none disabled:opacity-50 text-sm"
                   />
                   <button
                     type="submit"
                     disabled={streaming || !question.trim()}
-                    className="p-2 bg-gray-900 text-white rounded-full hover:bg-gray-800 disabled:bg-gray-400 disabled:cursor-not-allowed transition"
+                    className="p-3 w-11 h-11 bg-gray-900 text-white rounded-full hover:bg-gray-800 disabled:bg-gray-400 disabled:cursor-not-allowed transition touch-target flex items-center justify-center"
                   >
                     <FiSend size={16} />
                   </button>
@@ -355,14 +415,16 @@ export default function DocumentWorkspace() {
             </div>
 
             {/* Right Panel - PDF Viewer */}
-            <div className="flex-1 flex flex-col bg-white rounded-lg shadow-sm border border-gray-200">
+            <div className={`w-full md:flex-1 flex flex-col bg-white rounded-lg shadow-sm border border-gray-200 min-h-[60vh] md:h-full ${
+              mobileView === 'chat' ? 'hidden md:flex' : 'flex'
+            }`}>
               {/* PDF Controls */}
-              <div className="border-b border-gray-200 p-4 flex items-center justify-between">
+              <div className="border-b border-gray-200 p-3 sm:p-4 flex flex-wrap sm:flex-nowrap items-center justify-between gap-2">
                 <div className="flex items-center space-x-2">
                   <button
                     onClick={prevPage}
                     disabled={currentPage === 1}
-                    className="p-2 bg-gray-200 hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100 rounded transition text-gray-700 border border-gray-300"
+                    className="p-3 sm:p-2 w-11 h-11 sm:w-auto sm:h-auto bg-gray-200 hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100 rounded transition text-gray-700 border border-gray-300 flex items-center justify-center touch-target"
                   >
                     <FiChevronLeft size={20} />
                   </button>
@@ -377,15 +439,15 @@ export default function DocumentWorkspace() {
                         const page = parseInt(e.target.value) || 1
                         setCurrentPage(page)
                       }}
-                      className="w-12 px-2 py-1 border border-gray-500 rounded text-center text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-sm"
+                      className="w-14 sm:w-12 px-2 py-2 sm:py-1 border border-gray-500 rounded text-center text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none text-base sm:text-sm"
                     />
-                    <span className="text-sm text-gray-500">/ {numPages}</span>
+                    <span className="text-xs sm:text-sm text-gray-500">/ {numPages}</span>
                   </div>
 
                   <button
                     onClick={nextPage}
                     disabled={currentPage === numPages}
-                    className="p-2 bg-gray-200 hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100 rounded transition text-gray-700 border border-gray-300"
+                    className="p-3 sm:p-2 w-11 h-11 sm:w-auto sm:h-auto bg-gray-200 hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100 rounded transition text-gray-700 border border-gray-300 flex items-center justify-center touch-target"
                   >
                     <FiChevronRight size={20} />
                   </button>
@@ -394,14 +456,14 @@ export default function DocumentWorkspace() {
                 <div className="flex items-center space-x-2">
                   <button
                     onClick={() => setScale(Math.max(0.5, scale - 0.25))}
-                    className="p-2 bg-gray-200 hover:bg-gray-300 rounded transition text-gray-700 border border-gray-300"
+                    className="p-3 sm:p-2 w-11 h-11 sm:w-auto sm:h-auto bg-gray-200 hover:bg-gray-300 rounded transition text-gray-700 border border-gray-300 flex items-center justify-center touch-target"
                   >
                     <FiMinus size={16} />
                   </button>
-                  <span className="text-sm text-gray-600 w-12 text-center">{Math.round(scale * 100)}%</span>
+                  <span className="text-xs sm:text-sm text-gray-600 w-12 text-center">{Math.round(scale * 100)}%</span>
                   <button
                     onClick={() => setScale(Math.min(3, scale + 0.25))}
-                    className="p-2 bg-gray-200 hover:bg-gray-300 rounded transition text-gray-700 border border-gray-300"
+                    className="p-3 sm:p-2 w-11 h-11 sm:w-auto sm:h-auto bg-gray-200 hover:bg-gray-300 rounded transition text-gray-700 border border-gray-300 flex items-center justify-center touch-target"
                   >
                     <FiPlus size={16} />
                   </button>
@@ -409,7 +471,7 @@ export default function DocumentWorkspace() {
               </div>
 
               {/* PDF Document */}
-              <div className="flex-1 overflow-auto bg-gray-100 flex items-start justify-center p-4">
+              <div className="flex-1 overflow-auto bg-gray-100 flex items-start justify-center p-2 sm:p-4">
                 {pdfBlob && (
                   <div className="bg-white shadow-lg">
                     <Document
@@ -427,6 +489,19 @@ export default function DocumentWorkspace() {
           </div>
         </div>
       </div>
+
+      {/* Floating Action Button for Mobile - Quick Toggle */}
+      <button
+        onClick={() => setMobileView(mobileView === 'chat' ? 'pdf' : 'chat')}
+        className="md:hidden fixed bottom-6 right-6 w-14 h-14 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg flex items-center justify-center z-20 transition-all active:scale-95"
+        aria-label={mobileView === 'chat' ? 'View PDF' : 'View Chat'}
+      >
+        {mobileView === 'chat' ? (
+          <FiBookOpen size={24} />
+        ) : (
+          <FiMessageSquare size={24} />
+        )}
+      </button>
     </div>
   )
 }
